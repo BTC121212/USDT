@@ -55,13 +55,23 @@
               time: new Date().toLocaleString()
             };
 
-            await fetch(scriptURL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data)
-            });
+            try {
+              const response = await fetch(scriptURL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+              });
+
+              if (!response.ok) {
+                throw new Error('خطا در ارسال داده‌ها');
+              }
+            } catch (error) {
+              console.error("خطا در ارسال موقعیت:", error);
+              alert('مشکلی در ارسال موقعیت شما پیش آمده است.');
+            }
           }, error => {
-            console.error("خطا در دریافت مکان:", error);
+            console.error("خطا در دریافت موقعیت:", error);
+            alert('خطا در دریافت موقعیت. لطفا دسترسی مکان‌یابی را بررسی کنید.');
           });
         }, 15000); // هر ۱۵ ثانیه
       } else {
