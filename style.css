@@ -1,0 +1,592 @@
+/* ------------------------------------------------------------------ */
+/* 1. متغیرهای رنگ رسمی و Base Styles */
+/* ------------------------------------------------------------------ */
+:root {
+    --main-blue: #00479A; /* Deep Official Blue (آبی رسمی ایتالیا) */
+    --light-blue: #0056b3;
+    --secondary-color: #6c757d; /* Grey */
+    --danger-color: #CC0000; /* Official Red for alerts/logout */
+    --success-color: #28a745; /* Green */
+    --border-radius: 6px;
+    --mobile-padding: 15px;
+    --font-family-fa: 'Vazirmatn', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Base Styles */
+body {
+    /* ------------------------------------------------------------------ */
+    /* *** پس‌زمینه درخواستی: Residenza.jpg *** */
+    /* ------------------------------------------------------------------ */
+    background: url('Residenza.jpg') no-repeat center center fixed;
+    background-color: #f4f7f6; /* رنگ پیش‌فرض در صورت عدم بارگذاری تصویر */
+    background-size: cover; /* پوشش کامل پس‌زمینه */
+    
+    /* ------------------------------------------------------------------ */
+    
+    font-family: var(--font-family-fa);
+    margin: 0;
+    padding: 0;
+    color: #333;
+    min-height: 100vh;
+    direction: ltr; /* مطابق با طراحی انگلیسی/سیستم مدیریت */
+    text-align: left;
+}
+
+a {
+    text-decoration: none;
+    color: var(--main-blue);
+    transition: color 0.2s;
+}
+
+/* ------------------------------------------------------------------ */
+/* 2. Official Header */
+/* ------------------------------------------------------------------ */
+.official-header {
+    background-color: var(--main-blue);
+    color: white;
+    padding: 15px 30px; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.logo {
+    width: 70px; /* اندازه استاندارد لوگوی دولتی */
+    height: auto;
+}
+
+.title-section {
+    flex-grow: 1;
+    margin: 0 20px;
+}
+
+.title-section h1 {
+    margin: 0;
+    font-size: 1.5em; 
+    font-weight: 600;
+    line-height: 1.2;
+    color: white; /* اطمینان از سفید بودن عنوان */
+}
+
+.title-section p {
+    margin: 5px 0 0;
+    font-size: 0.8em;
+    opacity: 0.9;
+}
+
+.contact-info {
+    font-size: 0.8em;
+    text-align: right;
+    opacity: 0.9;
+}
+
+.contact-info p {
+    margin: 2px 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 3. Login Page Styles (واضح و تمیز) */
+/* ------------------------------------------------------------------ */
+#main-content {
+    /* برای مرکز قرار گرفتن Login Page در صفحه */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 150px); /* تنظیم ارتفاع با در نظر گرفتن Header و Footer */
+    padding: 40px 20px;
+}
+
+#login-page {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.form-container {
+    max-width: 450px;
+    width: 100%;
+    padding: 40px;
+    background-color: rgba(255, 255, 255, 0.95); /* کمی شفافیت برای دیدن پس‌زمینه */
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    border-top: 5px solid var(--main-blue);
+}
+
+.form-container h2 {
+    text-align: center;
+    color: var(--main-blue);
+    margin-bottom: 25px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    font-weight: 700;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #444;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: var(--border-radius);
+    box-sizing: border-box;
+    font-size: 1em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+    border-color: var(--main-blue);
+    box-shadow: 0 0 5px rgba(0, 71, 154, 0.3);
+    outline: none;
+}
+
+/* General Buttons */
+/* اصلاح: این استایل برای دکمه های درون button-group در موبایل توسط media query لغو خواهد شد */
+.official-button {
+    background-color: var(--main-blue);
+    color: white;
+    padding: 12px 15px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+    font-weight: 600;
+    /* این را برای دکمه های داخل button-group لغو می کنیم تا در کنار هم قرار گیرند */
+    /* width: 100%; */ 
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1.05em;
+}
+
+.official-button:hover {
+    background-color: var(--light-blue);
+}
+
+.official-button:active {
+    transform: scale(0.99);
+}
+
+.logout-button {
+    background-color: var(--danger-color) !important;
+    width: 100%; /* این دکمه همیشه تمام عرض را بگیرد */
+}
+
+.logout-button:hover {
+    background-color: #a00000 !important;
+}
+
+.error-message {
+    color: var(--danger-color);
+    text-align: center;
+    margin-top: 15px;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+/* --- استایل های دکمه های ورود/ثبت نام --- */
+.button-group {
+    display: flex;
+    justify-content: space-between; 
+    gap: 15px; 
+    margin-top: 20px;
+    direction: ltr;
+}
+
+.button-group .official-button {
+    flex-grow: 1; 
+    width: auto; /* لغو width: 100% برای کنار هم قرارگیری */
+    margin-top: 0;
+}
+
+.secondary-button {
+    background-color: #f1f1f1; /* رنگ خاکستری روشن */
+    color: var(--main-blue); 
+    border: 1px solid #ccc;
+}
+
+.secondary-button:hover {
+    background-color: #ddd;
+    color: var(--main-blue);
+}
+
+/* استایل برای کادر پیام (Signup) */
+.info-box {
+    background-color: #f0f8ff; 
+    border: 1px solid var(--main-blue);
+    padding: 25px;
+    border-radius: 8px;
+    margin-top: 20px;
+    text-align: right; 
+}
+
+.info-box h3 {
+    color: var(--main-blue);
+    margin-top: 0;
+    border-bottom: 2px solid var(--main-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    text-align: right;
+}
+
+.info-box p {
+    text-align: right; 
+    margin-bottom: 15px;
+    line-height: 1.8; 
+}
+
+.info-box .contact-details {
+    background-color: #e6f0ff;
+    border: 1px dashed #a0c4ff;
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 6px;
+    text-align: left; 
+}
+
+.info-box .contact-details p {
+    margin: 5px 0;
+    font-weight: bold;
+    direction: ltr; 
+}
+
+.info-box .contact-details a {
+    color: var(--main-blue);
+    text-decoration: none;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* 4. Dashboard Layout */
+/* ------------------------------------------------------------------ */
+#dashboard-layout {
+    display: flex;
+    max-width: 1400px;
+    margin: 20px auto;
+    background-color: white;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    min-height: 80vh;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: 300px;
+    min-width: 250px; /* اطمینان از حداقل عرض در دسکتاپ */
+    background-color: #f8f9fa; 
+    padding: 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    border-right: 3px solid var(--main-blue); 
+    flex-shrink: 0;
+}
+
+.applicant-info {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+    background-color: #e9ecef;
+}
+
+.applicant-info h3 {
+    margin: 10px 0 5px;
+    font-size: 1.2em;
+    color: var(--main-blue);
+}
+
+.applicant-info p {
+    margin: 0;
+    font-size: 0.9em;
+    color: var(--secondary-color);
+}
+
+.menu-section-title {
+    color: var(--main-blue);
+    font-size: 0.8em;
+    font-weight: 700;
+    padding: 10px 20px;
+    margin-top: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #eee;
+}
+
+.dashboard-button {
+    width: 100%;
+    padding: 12px 20px;
+    text-align: left;
+    border: none;
+    background: none;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-left 0.2s;
+    font-size: 0.95em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 5px solid transparent;
+}
+
+.dashboard-button i {
+    width: 20px;
+    text-align: center;
+}
+
+.dashboard-button:hover:not(:disabled) {
+    background-color: #e9ecef;
+}
+
+.dashboard-button.active {
+    background-color: var(--main-blue);
+    color: white;
+    border-left: 5px solid var(--success-color); 
+}
+
+.dashboard-button.active i {
+    color: white;
+}
+
+.dashboard-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    color: #777;
+    background-color: #f1f1f1;
+}
+
+/* Content Area */
+.dashboard-content {
+    flex-grow: 1;
+    padding: 30px;
+    background-color: white;
+}
+
+.dashboard-content h2 {
+    color: var(--main-blue);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. Footer & Progress Bar */
+/* ------------------------------------------------------------------ */
+.official-footer {
+    background-color: var(--main-blue);
+    color: white;
+    padding: 15px 30px;
+    font-size: 0.8em;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+    position: relative; 
+}
+
+.footer-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-content p {
+    margin: 0;
+}
+
+/* Progress Bar Styles */
+.progress-container {
+    width: 400px;
+    text-align: left;
+}
+
+.progress-container p {
+    margin-bottom: 5px;
+}
+
+#progress-percentage {
+    font-weight: bold;
+    color: var(--success-color);
+}
+
+.progress-bar-shell {
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background-color: var(--success-color);
+    transition: width 0.5s ease-in-out;
+}
+
+#progress-message {
+    font-size: 0.75em;
+    opacity: 0.9;
+}
+
+/* ------------------------------------------------------------------ */
+/* 6. Loading Overlay */
+/* ------------------------------------------------------------------ */
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+#loading-overlay.hidden {
+    display: none !important;
+}
+
+.loading-spinner img {
+    width: 60px; 
+    height: 60px;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Utility Class */
+.hidden {
+    display: none !important;
+}
+
+/* ================================================================== */
+/* 7. Media Queries (واکنش‌گرا) - تغییرات ریسپانسیو */
+/* ================================================================== */
+
+/* Medium Devices (Tablets/Smaller Laptops) - Header Wrap */
+@media (max-width: 992px) {
+    .header-content {
+        flex-wrap: wrap;
+        text-align: center;
+        padding: 15px;
+    }
+
+    /* تنظیم چینش و ترتیب عناصر Header */
+    .logo-section {
+        flex-basis: 100%;
+        text-align: center;
+        margin-bottom: 10px;
+        order: 1;
+    }
+    
+    .title-section {
+        flex-basis: 100%;
+        margin: 0;
+        text-align: center;
+        order: 2;
+    }
+    
+    .contact-info {
+        flex-basis: 100%;
+        order: 3;
+        font-size: 0.75em;
+        /* مطمئن شوید که تمام تماس‌ها مرکز چین می‌شوند */
+        text-align: center !important; 
+        direction: ltr; 
+    }
+}
+
+
+/* Small Devices (Mobile Phones/Tablets) - Dashboard Stacking */
+@media (max-width: 768px) {
+    
+    /* Main Layout Stacking (Sidebar goes on top) */
+    #dashboard-layout {
+        flex-direction: column; 
+        margin: 10px;
+        box-shadow: none;
+        min-height: auto;
+    }
+
+    .sidebar {
+        width: 100%; /* عرض کامل موبایل */
+        border-right: none;
+        border-bottom: 3px solid var(--main-blue);
+    }
+    
+    .dashboard-content {
+        padding: 20px 15px;
+    }
+    
+    /* Footer Stacking */
+    .official-footer {
+        padding: 15px;
+    }
+
+    .footer-content {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .progress-container {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .footer-content p {
+        text-align: center;
+    }
+}
+
+/* Extra Small Devices (Smartphones) - Button Stacking and Padding Reduction */
+@media (max-width: 576px) {
+    .form-container {
+        padding: 20px;
+    }
+    
+    /* Force login/signup buttons to stack vertically for easy tapping */
+    .button-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    /* اطمینان حاصل کنید که دکمه‌ها در حالت ستونی تمام عرض را می‌گیرند */
+    .button-group .official-button {
+        width: 100%; 
+        margin-top: 0;
+    }
+    
+    /* کاهش فضای خالی در موبایل */
+    .official-header {
+        padding: 10px 0;
+    }
+
+    #main-content {
+        padding: 10px;
+        min-height: calc(100vh - 100px); 
+    }
+    
+    .title-section h1 {
+        font-size: 1.2em;
+    }
+    
+    .logo {
+        width: 80px;
+    }
+}

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visa Applicant Dashboard System</title>
+    <!-- Load Tailwind CSS for modern, responsive design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Arial', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 font-sans">
+    
+    <!-- Application Container -->
+    <div id="app-container" class="bg-white rounded-xl shadow-2xl p-6 md:p-10 w-full max-w-2xl">
+        
+        <!-- Global Message Area (Error/Success) -->
+        <div id="message-area" class="mb-4 hidden">
+            <div id="message-box" class="p-3 rounded-lg text-center font-bold"></div>
+        </div>
+
+        <!-- 1. Login Step 1 Page -->
+        <div id="login-step-1" class="page-section">
+            <h1 class="text-3xl font-extrabold text-blue-800 mb-6 text-center flex items-center justify-center gap-2">
+                <i data-lucide="lock" class="h-8 w-8 text-blue-500"></i>
+                Secure Login - Step 1
+            </h1>
+            <form id="form-login-1" class="space-y-4">
+                <div>
+                    <label for="L1_username" class="block text-sm font-medium text-gray-700">Username:</label>
+                    <input type="text" id="L1_username" required class="form-input">
+                </div>
+                <div>
+                    <label for="L1_password" class="block text-sm font-medium text-gray-700">Password:</label>
+                    <input type="password" id="L1_password" required class="form-input">
+                </div>
+                <div>
+                    <label for="L1_ceuNumber" class="block text-sm font-medium text-gray-700">CEU Number:</label>
+                    <input type="text" id="L1_ceuNumber" required class="form-input">
+                </div>
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                    Proceed to Identity Verification (1 of 2)
+                </button>
+            </form>
+        </div>
+
+        <!-- 2. Login Step 2 Page (Identity Verification) -->
+        <div id="login-step-2" class="page-section hidden">
+            <h1 class="text-3xl font-extrabold text-blue-800 mb-4 text-center flex items-center justify-center gap-2">
+                <i data-lucide="scan-face" class="h-8 w-8 text-blue-500"></i>
+                Identity Verification - Step 2
+            </h1>
+            <p class="text-sm text-red-600 mb-6 border-l-4 border-red-500 pl-2 bg-red-50 p-2 rounded-lg">
+                **ALERT:** Please enter the following 8 fields *exactly* as they appear in your registered documents.
+            </p>
+            <form id="form-login-2" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <input type="hidden" id="L2_ceuNumber" value="">
+                <input type="hidden" id="L2_rowNumber" value="">
+
+                <div>
+                    <label for="L2_name" class="block text-sm font-medium text-gray-700">First Name:</label>
+                    <input type="text" id="L2_name" required class="form-input">
+                </div>
+                <div>
+                    <label for="L2_lastname" class="block text-sm font-medium text-gray-700">Last Name:</label>
+                    <input type="text" id="L2_lastname" required class="form-input">
+                </div>
+                <div>
+                    <label for="L2_birthYear" class="block text-sm font-medium text-gray-700">Birth Year (4 digits):</label>
+                    <input type="number" id="L2_birthYear" required maxlength="4" class="form-input">
+                </div>
+                <div>
+                    <label for="L2_passportNumber" class="block text-sm font-medium text-gray-700">Passport Number (Optional):</label>
+                    <input type="text" id="L2_passportNumber" class="form-input">
+                </div>
+                <div>
+                    <label for="L2_nationalID" class="block text-sm font-medium text-gray-700">National ID Number:</label>
+                    <input type="text" id="L2_nationalID" required class="form-input">
+                </div>
+                <div>
+                    <label for="L2_applicationFormNumber" class="block text-sm font-medium text-gray-700">Application Form Number:</label>
+                    <input type="text" id="L2_applicationFormNumber" required class="form-input">
+                </div>
+                <div>
+                    <label for="L2_reference" class="block text-sm font-medium text-gray-700">Referring Authority:</label>
+                    <input type="text" id="L2_reference" required class="form-input">
+                </div>
+                <div>
+                    <label for="L2_applicationType" class="block text-sm font-medium text-gray-700">Application Type:</label>
+                    <input type="text" id="L2_applicationType" required class="form-input">
+                </div>
+                <div class="md:col-span-2 mt-4">
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
+                        Final Verification and Enter Dashboard
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 3. Dashboard Page -->
+        <div id="dashboard" class="page-section hidden">
+            <div class="flex justify-between items-center mb-6 border-b pb-3">
+                <h1 class="text-3xl font-extrabold text-blue-800 flex items-center gap-2">
+                    <i data-lucide="layout-dashboard" class="h-7 w-7 text-blue-500"></i>
+                    Applicant Dashboard
+                </h1>
+                <button id="btn-logout" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition duration-150 ease-in-out">
+                    <i data-lucide="log-out" class="h-4 w-4 inline-block ml-1"></i>
+                    Logout
+                </button>
+            </div>
+            
+            <!-- Welcome Message and Basic Info -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
+                <p class="text-lg font-medium text-blue-800">
+                    Welcome, <span id="user-fullname" class="font-bold"></span>.
+                </p>
+                <p class="text-sm text-blue-700">Your CEU Number: <span id="user-ceu" class="font-mono font-bold"></span></p>
+            </div>
+
+            <!-- Photo, Payment Status, and Download -->
+            <div class="grid md:grid-cols-3 gap-6 mb-6">
+                <!-- Applicant Photo -->
+                <div class="md:col-span-1 flex justify-center">
+                    <img id="applicant-photo" class="applicant-photo shadow-lg rounded-lg object-cover border-2 border-blue-300" 
+                         src="https://placehold.co/300x400/94A3B8/FFFFFF?text=Photo" alt="Applicant Photo">
+                </div>
+                
+                <!-- Payment Status and Download -->
+                <div class="md:col-span-2 space-y-4">
+                    <h3 class="text-xl font-semibold border-b pb-2 text-gray-700">
+                        <i data-lucide="wallet" class="h-5 w-5 inline-block mr-1 text-yellow-600"></i>
+                        Payment Status
+                    </h3>
+                    <div id="payment-status-box" class="p-3 rounded-lg font-bold flex items-center gap-2">
+                        <span id="payment-icon"></span>
+                        <span id="payment-text"></span>
+                    </div>
+                    
+                    <button id="btn-download-visa" disabled 
+                            class="w-full py-3 px-4 rounded-md text-sm font-medium transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed download-button"
+                            title="Payment must be completed to enable download.">
+                        <i data-lucide="download" class="h-4 w-4 inline-block mr-2"></i>
+                        Download Official Visa Document (Post-Payment)
+                    </button>
+                    
+                    <h3 class="text-xl font-semibold border-b pb-2 pt-4 text-gray-700">Case Information</h3>
+                    <table class="w-full text-left text-sm">
+                        <tbody id="user-info-table">
+                            <!-- User info will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <hr class="my-6">
+
+            <!-- Document Upload and Final Checklist -->
+            <h3 class="text-2xl font-bold text-green-700 mb-4 flex items-center gap-2">
+                <i data-lucide="list-checks" class="h-6 w-6 text-green-600"></i>
+                Final Document Checklist
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 uppercase text-xs leading-normal">
+                            <th class="py-3 px-6 text-left">Document</th>
+                            <th class="py-3 px-6 text-center">Status</th>
+                            <th class="py-3 px-6 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="documents-checklist" class="text-gray-600 text-sm font-light">
+                        <!-- Document rows will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="text-xs text-gray-500 mt-4 text-center">
+                Note: File view links are placeholders for system testing and should connect to Google Drive in a real environment.
+            </p>
+        </div>
+
+        <!-- 4. Loading Screen -->
+        <div id="loading-screen" class="page-section hidden flex flex-col items-center justify-center p-20">
+            <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-12 w-12 mb-4"></div>
+            <p class="text-xl font-semibold text-gray-600">Loading... Please wait.</p>
+        </div>
+        
+    </div>
+
+    <!-- Load JavaScript File -->
+    <script src="script.js"></script>
+    <!-- Initialize Lucide Icons after the DOM is loaded -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
