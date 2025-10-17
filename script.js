@@ -1,409 +1,340 @@
-document.addEventListener('DOMContentLoaded', () => {
-    
-    // ----------------------------------------------------------------
-    // 1. Configuration and Global Variables
-    // ----------------------------------------------------------------
-    
-    // **CRITICAL:** REPLACE THIS WITH YOUR PUBLISHED GOOGLE APPS SCRIPT WEB APP URL
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwFcCIi_ti0ZLtd4-fKb4vBz_VcPi73LxKjhQt-mCARzZNuz3pexh3Ed-l7A9MAufDEWA/exec'; 
-    
-    // Session timeout (5 minutes in milliseconds)
-    const SESSION_TIMEOUT = 5 * 60 * 1000; 
-    let sessionTimer = null;
-    
-    let currentUserData = null; // Full user data upon successful login
-    let tempUserData = null;    // Data after successful Step 1 (for use in Step 2)
-    
-    // Data model for the Final Checklist (key: sheet column name, value: friendly label)
-    const DOCUMENT_MODEL = {
-        'uploadPassport': 'Passport',
-        'uploadIdentityDocs': 'Identity Documents',
-        'uploadProofOfDanger': 'Proof of Danger Documents',
-        'uploadResidenceDocs': 'Residence Documents',
-        'uploadEducationJobDocs': 'Education/Job Documents',
-        'uploadFingerprints': 'Fingerprints File',
-        'uploadPaymentReceipt': 'Payment Receipt'
+// script.js
+// فرانت‌اند کاملِ لاگین دو مرحله‌ای و داشبورد — بدون PHP — کار با Google Apps Script WebApp
+// WebApp مورد استفاده در index.html داخل window.VISA_API_BASE قرار دارد.
+
+(function(){
+  const API = (window.VISA_API_BASE || '').replace(/\/+$/,'') + '/?action=';
+  const INACTIVITY_MS = 5 * 60 * 1000; // 5 دقیقه
+
+  // عناصر DOM
+  const form1 = document.getElementById('form-step1');
+  const form2 = document.getElementById('form-step2');
+  const err1 = document.getElementById('err-step1');
+  const err2 = document.getElementById('err-step2');
+  const dashboardArea = document.getElementById('dashboard-area');
+  const authArea = document.getElementById('auth-area');
+
+  const appPhoto = document.getElementById('app-photo');
+  const photoCaption = document.getElementById('photo-caption');
+  const appName = document.getElementById('app-name');
+  const appCEU = document.getElementById('app-ceu');
+  const btnDownload = document.getElementById('btn-download');
+  const downloadTooltip = document.getElementById('download-tooltip');
+  const uploadsList = document.getElementById('uploads-list');
+  const dashWelcome = document.getElementById('dash-welcome');
+  const btnLogout = document.getElementById('btn-logout');
+  const btnFinalChecklist = document.getElementById('btn-final-checklist');
+  const checklistResult = document.getElementById('checklist-result');
+
+  // ذخیرهٔ محلی نشست
+  let sessionToken = sessionStorage.getItem('sessionToken') || null;
+  let sessionCEU = sessionStorage.getItem('sessionCEU') || null;
+  let inactivityTimer = null;
+
+  // helper: fetch JSON
+  async function apiFetch(action, body = null) {
+    const url = API + encodeURIComponent(action);
+    if (body === null) {
+      const r = await fetch(url);
+      return r.json();
+    } else {
+      // POST form-encoded
+      const fd = new URLSearchParams();
+      for (const k in body) fd.append(k, body[k]);
+      const r = await fetch(url, { method: 'POST', body: fd });
+      return r.json();
+    }
+  }
+
+  // نمایش خطا
+  function showError(el, text) {
+    el.textContent = text || 'خطا';
+    el.classList.remove('hidden');
+  }
+  function hideError(el) { el.textContent = ''; el.classList.add('hidden'); }
+
+  // مدیریت بی‌حرکتی
+  function resetInactivity() {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      alert('نشست شما به‌خاطر عدم فعالیت منقضی شد.');
+      doLogout();
+    }, INACTIVITY_MS);
+  }
+  ['mousemove','keydown','click','touchstart','scroll'].forEach(ev => {
+    document.addEventListener(ev, resetInactivity);
+  });
+
+  // STEP 1 submit
+  form1.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideError(err1);
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const ceu = document.getElementById('ceu').value.trim();
+    if (!username || !password || !ceu) {
+      showError(err1, 'لطفاً همهٔ فیلدهای مرحلهٔ اول را پر کنید.');
+      return;
+    }
+    try {
+      const resp = await apiFetch('step1', { username, password, ceu });
+      if (!resp.ok) {
+        showError(err1, resp.error || 'خطای احراز هویت');
+        return;
+      }
+      // ذخیرهٔ ceu برای مرحلهٔ دوم
+      sessionStorage.setItem('pendingCEU', ceu);
+      // پر کردن فرم مرحلهٔ دوم با دادهٔ برگشتی
+      const s2 = resp.step2 || {};
+      document.getElementById('s2-name').value = s2.name || '';
+      document.getElementById('s2-lastname').value = s2.lastname || '';
+      document.getElementById('s2-birthYear').value = s2.birthYear || '';
+      document.getElementById('s2-passportNumber').value = s2.passportNumber || '';
+      document.getElementById('s2-nationalID').value = s2.nationalID || '';
+      document.getElementById('s2-applicationFormNumber').value = s2.applicationFormNumber || '';
+      document.getElementById('s2-reference').value = s2.reference || '';
+      document.getElementById('s2-applicationType').value = s2.applicationType || '';
+
+      // نمایش مرحلهٔ دوم
+      form1.classList.add('hidden');
+      form2.classList.remove('hidden');
+    } catch (err) {
+      console.error(err);
+      showError(err1, 'خطا در ارتباط با سرور (WebApp).');
+    }
+  });
+
+  // back from step2
+  document.getElementById('btn-step2-back').addEventListener('click', () => {
+    form2.classList.add('hidden');
+    form1.classList.remove('hidden');
+    hideError(err2);
+  });
+
+  // step2 confirm
+  document.getElementById('btn-step2-confirm').addEventListener('click', async () => {
+    hideError(err2);
+    const body = {
+      ceu: sessionStorage.getItem('pendingCEU') || '',
+      name: document.getElementById('s2-name').value.trim(),
+      lastname: document.getElementById('s2-lastname').value.trim(),
+      birthYear: document.getElementById('s2-birthYear').value.trim(),
+      passportNumber: document.getElementById('s2-passportNumber').value.trim(),
+      nationalID: document.getElementById('s2-nationalID').value.trim(),
+      applicationFormNumber: document.getElementById('s2-applicationFormNumber').value.trim(),
+      reference: document.getElementById('s2-reference').value.trim(),
+      applicationType: document.getElementById('s2-applicationType').value.trim()
     };
 
-    // ----------------------------------------------------------------
-    // 2. UX and UI Helper Functions
-    // ----------------------------------------------------------------
-
-    /**
-     * Display an error/success message to the user
-     * @param {string} message - The message text
-     * @param {boolean} isSuccess - Is it a success message?
-     */
-    function showMessage(message, isSuccess = false) {
-        const msgArea = document.getElementById('message-area');
-        const msgBox = document.getElementById('message-box');
-        
-        msgBox.textContent = message;
-        msgArea.classList.remove('hidden');
-        
-        if (isSuccess) {
-            msgBox.className = 'p-3 rounded-lg text-center font-bold bg-green-100 text-green-800';
-        } else {
-            msgBox.className = 'p-3 rounded-lg text-center font-bold bg-red-100 text-red-800';
-        }
-
-        // Hide message after 5 seconds
-        setTimeout(() => msgArea.classList.add('hidden'), 5000);
+    // Basic validation
+    if (!body.ceu) { showError(err2,'خطا: اطلاعات CEU در دسترس نیست. مرحلهٔ اول را تکرار کنید.'); return; }
+    if (!body.name || !body.lastname || !body.birthYear || !body.nationalID || !body.applicationFormNumber || !body.reference || !body.applicationType) {
+      showError(err2,'لطفاً همهٔ فیلدهای اجباری مرحلهٔ دوم را پر کنید.');
+      return;
     }
-    
-    /**
-     * Changes the active view/page
-     * @param {string} pageId - The ID of the page section to show (e.g., 'login-step-1')
-     */
-    function showPage(pageId) {
-        document.querySelectorAll('.page-section').forEach(section => {
-            if (section.id === pageId) {
-                section.classList.remove('hidden');
-                // Optional: apply transition classes if needed
-            } else {
-                section.classList.add('hidden');
-            }
-        });
-        // Re-initialize Lucide icons after page change
-        lucide.createIcons();
+    // birthYear: فقط 4 رقم قابل قبول
+    if (!/^\d{4}$/.test(body.birthYear)) {
+      showError(err2,'سال تولد باید به صورت 4 رقم (YYYY) باشد.');
+      return;
     }
 
-    /**
-     * Toggles the loading screen based on state
-     * @param {boolean} isLoading 
-     */
-    function toggleLoading(isLoading) {
-        if (isLoading) {
-            showPage('loading-screen');
-        } else if (currentUserData) {
-            showPage('dashboard');
-        } else if (tempUserData) {
-            showPage('login-step-2');
-        } else {
-            showPage('login-step-1');
-        }
+    try {
+      const resp = await apiFetch('step2', body);
+      if (!resp.ok) {
+        showError(err2, resp.error || 'اعتبارسنجی مرحلهٔ دوم ناموفق بود.');
+        return;
+      }
+      // موفقیت -> دریافت sessionToken
+      sessionToken = resp.sessionToken;
+      sessionStorage.setItem('sessionToken', sessionToken);
+      sessionStorage.setItem('sessionCEU', body.ceu);
+      sessionStorage.removeItem('pendingCEU');
+      // بارگذاری داشبورد
+      await loadDashboard();
+      resetAndStart();
+    } catch (err) {
+      console.error(err);
+      showError(err2, 'خطا در ارتباط با سرور (WebApp).');
     }
-    
-    /**
-     * Generates HTML rows for the document checklist table
-     * @param {object} user - User data object
-     * @returns {string} HTML for table rows
-     */
-    function generateDocumentRows(user) {
-        let html = '';
-        for (const [key, label] of Object.entries(DOCUMENT_MODEL)) {
-            // Check if the link exists and is not an empty/placeholder string
-            const link = user[key];
-            const isUploaded = link && link !== 'N/A' && link.trim() !== "";
-            
-            const statusIcon = isUploaded 
-                ? '<span class="icon-ok flex items-center gap-1">✅ Uploaded</span>' 
-                : '<span class="icon-error flex items-center gap-1">⛔ Pending</span>';
-            
-            // Generate the link with a default placeholder if not uploaded
-            const fileLink = isUploaded ? link : '#';
+  });
 
-            html += `
-                <tr class="border-b border-gray-200 hover:bg-gray-100">
-                    <td class="py-3 px-6 text-left font-medium">${label}</td>
-                    <td class="py-3 px-6 text-center">${statusIcon}</td>
-                    <td class="py-3 px-6 text-center flex gap-2 justify-center">
-                        <button class="doc-action-button btn-upload" data-key="${key}" ${isUploaded ? 'disabled' : ''}>
-                            ${isUploaded ? 'Re-Upload' : 'Upload File'}
-                        </button>
-                        <a href="${fileLink}" target="_blank" class="doc-action-button btn-view ${isUploaded ? '' : 'disabled'}" ${!isUploaded ? 'disabled' : ''}>
-                            View File
-                        </a>
-                    </td>
-                </tr>
-            `;
-        }
-        return html;
+  // load dashboard from sessionToken
+  async function loadDashboard() {
+    if (!sessionToken) {
+      showAuth();
+      return;
     }
-
-    /**
-     * Renders the entire dashboard with current user data
-     */
-    function renderDashboard() {
-        if (!currentUserData) return;
-
-        // 1. Main Info
-        document.getElementById('user-fullname').textContent = `${currentUserData.name} ${currentUserData.lastname}`;
-        document.getElementById('user-ceu').textContent = currentUserData.ceuNumber;
-        document.getElementById('applicant-photo').src = currentUserData.photoURL || 'https://placehold.co/300x400/94A3B8/FFFFFF?text=Photo';
-        
-        // 2. Case Info Table
-        const infoTable = document.getElementById('user-info-table');
-        infoTable.innerHTML = `
-            <tr><td class="font-bold w-1/2 py-1">Application Form No:</td><td class="py-1">${currentUserData.applicationFormNumber}</td></tr>
-            <tr><td class="font-bold py-1">National ID:</td><td class="py-1">${currentUserData.nationalID}</td></tr>
-            <tr><td class="font-bold py-1">Birth Year:</td><td class="py-1">${currentUserData.birthYear}</td></tr>
-            <tr><td class="font-bold py-1">Application Type:</td><td class="py-1">${currentUserData.applicationType}</td></tr>
-        `;
-
-        // 3. Payment Status and Download Button
-        const isPaid = currentUserData.paymentStatus.toLowerCase() === 'paid';
-        const paymentBox = document.getElementById('payment-status-box');
-        const downloadBtn = document.getElementById('btn-download-visa');
-        
-        paymentBox.className = 'p-3 rounded-lg font-bold flex items-center gap-2 ' + (isPaid ? 'status-paid' : 'status-unpaid');
-        document.getElementById('payment-icon').innerHTML = isPaid ? '<i data-lucide="check-circle-2" class="h-5 w-5"></i>' : '<i data-lucide="alert-triangle" class="h-5 w-5"></i>';
-        document.getElementById('payment-text').textContent = isPaid ? 'Payment is completed.' : 'Awaiting visa fee payment.';
-        
-        if (isPaid) {
-            downloadBtn.classList.remove('disabled');
-            downloadBtn.classList.add('bg-green-600');
-            downloadBtn.disabled = false;
-            downloadBtn.title = 'File is ready for download.';
-        } else {
-            downloadBtn.classList.remove('bg-green-600');
-            downloadBtn.classList.add('disabled');
-            downloadBtn.disabled = true;
-            downloadBtn.title = 'Please complete your visa application payment to enable download.';
-        }
-
-        // 4. Final Document Checklist
-        document.getElementById('documents-checklist').innerHTML = generateDocumentRows(currentUserData);
-        attachDocumentListeners();
-    }
-
-    /**
-     * Attaches click listeners to dynamically created upload buttons.
-     */
-    function attachDocumentListeners() {
-        document.querySelectorAll('.btn-upload').forEach(button => {
-            button.onclick = (e) => handleDocumentUpload(e, button.getAttribute('data-key'));
-        });
-        
-        // Prevent default click action on disabled 'View File' links
-        document.querySelectorAll('.btn-view').forEach(link => {
-             if (link.hasAttribute('disabled')) {
-                link.onclick = (e) => { e.preventDefault(); showMessage('No file uploaded to view.', false); };
-             }
-        });
-    }
-
-    // ----------------------------------------------------------------
-    // 3. Session Management Functions
-    // ----------------------------------------------------------------
-
-    function startSessionTimer() {
-        if (sessionTimer) {
-            clearTimeout(sessionTimer);
-        }
-        // Set a timeout to log out if there is no activity
-        sessionTimer = setTimeout(performLogout, SESSION_TIMEOUT, true);
-        console.log(`Session timer started. Timeout in ${SESSION_TIMEOUT / 60000} minutes.`);
-    }
-
-    function resetSessionTimer() {
-        if (currentUserData) {
-            startSessionTimer();
-        }
-    }
-
-    /**
-     * Complete system logout
-     * @param {boolean} isTimeout - Was the logout due to inactivity?
-     */
-    async function performLogout(isTimeout = false) {
-        clearTimeout(sessionTimer);
-        
-        if (isTimeout) {
-            showMessage("Your session expired due to inactivity.", false);
-        } else {
-            showMessage("You have successfully logged out.", true);
-        }
-
-        // 1. Send command to server to clear the token
-        if (currentUserData) {
-            await sendRequest('logout', { ceuNumber: currentUserData.ceuNumber });
-        }
-        
-        // 2. Clear local data
+    try {
+      const resp = await apiFetch('checkSession&token=' + encodeURIComponent(sessionToken));
+      if (!resp.ok) {
+        // توکن نامعتبر یا منقضی
         sessionStorage.removeItem('sessionToken');
-        sessionStorage.removeItem('ceuNumber');
-        currentUserData = null;
-        tempUserData = null;
-        
-        // 3. Return to the first login page
-        showPage('login-step-1');
-    }
-    
-    // Listen for user activity to reset the timer
-    document.addEventListener('mousemove', resetSessionTimer);
-    document.addEventListener('keypress', resetSessionTimer);
-    document.addEventListener('click', resetSessionTimer);
-    document.addEventListener('scroll', resetSessionTimer);
+        sessionStorage.removeItem('sessionCEU');
+        sessionToken = null;
+        showAuth();
+        return;
+      }
+      const u = resp.user || {};
+      // پر کردن UI داشبورد
+      appName.textContent = (u.name || '') + ' ' + (u.lastname || '');
+      appCEU.textContent = 'CEU: ' + (u.ceuNumber || sessionStorage.getItem('sessionCEU') || '—');
+      dashWelcome.textContent = 'خوش آمدید، ' + (u.name || '') + ' ' + (u.lastname || '');
 
-
-    // ----------------------------------------------------------------
-    // 4. Google Apps Script Communication
-    // ----------------------------------------------------------------
-
-    /**
-     * Send an AJAX request to the Google Apps Script Web App
-     * @param {string} action - The desired server operation
-     * @param {object} payload - Data to send
-     */
-    async function sendRequest(action, payload = {}) {
-        toggleLoading(true);
-        try {
-            const response = await fetch(WEB_APP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, ...payload })
-            });
-            
-            const data = await response.json();
-            toggleLoading(false);
-            return data;
-
-        } catch (error) {
-            console.error('API Error:', error);
-            toggleLoading(false);
-            showMessage("Error connecting to the server. Please check your network connection.", false);
-            return { success: false, message: "Network Error." };
-        }
-    }
-
-    // ----------------------------------------------------------------
-    // 5. Login and Dashboard Logic
-    // ----------------------------------------------------------------
-    
-    // --- Handle Login Form 1 Submission ---
-    document.getElementById('form-login-1').onsubmit = async (e) => {
-        e.preventDefault();
-        
-        const username = document.getElementById('L1_username').value.trim();
-        const password = document.getElementById('L1_password').value.trim();
-        const ceuNumber = document.getElementById('L1_ceuNumber').value.trim();
-        
-        const result = await sendRequest('login1', { username, password, ceuNumber });
-        
-        if (result.success) {
-            tempUserData = result.user;
-            
-            // Populate hidden fields in form 2 for continuity
-            document.getElementById('L2_ceuNumber').value = tempUserData.ceuNumber;
-            document.getElementById('L2_rowNumber').value = tempUserData.rowNumber;
-            
-            showPage('login-step-2');
-            showMessage("Step 1 successful. Please complete identity verification.", true);
-        } else {
-            showMessage(result.message || "Error in Step 1 login.", false);
-        }
-    };
-    
-    // --- Handle Login Form 2 Submission ---
-    document.getElementById('form-login-2').onsubmit = async (e) => {
-        e.preventDefault();
-        
-        // 1. Client-side validation (e.g., Birth Year format)
-        const birthYear = document.getElementById('L2_birthYear').value.trim();
-        if (!/^\d{4}$/.test(birthYear)) {
-            showMessage("Birth Year must be a 4-digit number.", false);
-            return;
-        }
-
-        // 2. Prepare payload for Step 2
-        const payload = {
-            ceuNumber: tempUserData.ceuNumber,
-            rowNumber: tempUserData.rowNumber,
-            name: document.getElementById('L2_name').value.trim(),
-            lastname: document.getElementById('L2_lastname').value.trim(),
-            birthYear: birthYear,
-            passportNumber: document.getElementById('L2_passportNumber').value.trim(),
-            nationalID: document.getElementById('L2_nationalID').value.trim(),
-            applicationFormNumber: document.getElementById('L2_applicationFormNumber').value.trim(),
-            reference: document.getElementById('L2_reference').value.trim(),
-            applicationType: document.getElementById('L2_applicationType').value.trim()
+      // عکس
+      if (u.photoURL && u.photoURL.startsWith('http')) {
+        appPhoto.src = u.photoURL;
+        appPhoto.alt = 'عکس متقاضی';
+        photoCaption.textContent = '';
+        appPhoto.onerror = () => {
+          appPhoto.src = '';
+          photoCaption.textContent = 'عکس موجود نیست';
+          appPhoto.style.display = 'none';
         };
-        
-        // 3. Send to server for final validation and token generation
-        const result = await sendRequest('login2', payload);
+        appPhoto.style.display = '';
+      } else {
+        appPhoto.src = '';
+        appPhoto.style.display = 'none';
+        photoCaption.textContent = 'عکس موجود نیست';
+      }
 
-        if (result.success) {
-            currentUserData = result.user;
-            
-            // Store session in browser
-            sessionStorage.setItem('sessionToken', result.token);
-            sessionStorage.setItem('ceuNumber', currentUserData.ceuNumber);
-            
-            // Start timer and show dashboard
-            renderDashboard();
-            startSessionTimer();
-            showPage('dashboard');
-            showMessage("Login successful. Welcome to the dashboard!", true);
+      // وضعیت پرداخت — اگر Paid -> فعال
+      const paid = (u.paymentStatus || '').toString().trim().toLowerCase() === 'paid';
+      btnDownload.disabled = !paid;
+      if (paid) {
+        downloadTooltip.classList.add('hidden');
+      } else {
+        downloadTooltip.classList.remove('hidden');
+      }
 
+      // لیست آپلودها — طبق ستون‌های پیشنهادی
+      const uploadFields = [
+        ['uploadPassport','پاسپورت'],
+        ['uploadIdentityDocs','مدارک هویتی'],
+        ['uploadProofOfDanger','اسناد خطر'],
+        ['uploadResidenceDocs','اسناد محل اقامت'],
+        ['uploadEducationJobDocs','مدارک تحصیلی/شغلی'],
+        ['uploadFingerprints','اثرانگشت'],
+        ['uploadPaymentReceipt','رسید پرداخت']
+      ];
+      uploadsList.innerHTML = '';
+      uploadFields.forEach(([fieldKey,label]) => {
+        const val = u[fieldKey] || '';
+        const row = document.createElement('div');
+        row.className = 'upload-row';
+        const lbl = document.createElement('div');
+        lbl.style.minWidth = '120px';
+        lbl.textContent = label + ':';
+        row.appendChild(lbl);
+        if (val && val.toString().startsWith('http')) {
+          const viewBtn = document.createElement('button');
+          viewBtn.className = 'small-btn';
+          viewBtn.textContent = 'نمایش فایل';
+          viewBtn.addEventListener('click', ()=> window.open(val,'_blank'));
+          row.appendChild(viewBtn);
+          const disabledUpload = document.createElement('button');
+          disabledUpload.className = 'small-btn';
+          disabledUpload.textContent = 'آپلود (غیرفعال)';
+          disabledUpload.disabled = true;
+          row.appendChild(disabledUpload);
         } else {
-            showMessage(result.message || "Error in data matching. Please ensure all 8 fields are exact.", false);
+          const fileInput = document.createElement('input');
+          fileInput.type = 'file';
+          fileInput.id = 'file-'+fieldKey;
+          fileInput.style.flex = '1';
+          row.appendChild(fileInput);
+          const uploadBtn = document.createElement('button');
+          uploadBtn.className = 'small-btn';
+          uploadBtn.textContent = 'آپلود';
+          uploadBtn.addEventListener('click', ()=> handleUpload(fieldKey, fileInput));
+          row.appendChild(uploadBtn);
         }
-    };
-    
-    // --- Document Upload Handler (Mock Implementation) ---
-    async function handleDocumentUpload(e, key) {
-        e.preventDefault();
-        
-        if (!currentUserData) return;
+        uploadsList.appendChild(row);
+      });
 
-        // In a real environment, file selection and Google Drive upload logic would go here.
-        // For demonstration, we simulate the process by generating a mock link.
-        const mockLink = `https://mock-drive.com/${currentUserData.ceuNumber}/${key}-${Date.now()}.pdf`; 
-        
-        const result = await sendRequest('updateDocument', {
-            ceuNumber: currentUserData.ceuNumber,
-            token: sessionStorage.getItem('sessionToken'),
-            documentKey: key,
-            linkValue: mockLink // Mock link value for testing
-        });
-
-        if (result.success) {
-            currentUserData = result.user; // Update user data with new link
-            renderDashboard(); // Re-render to update the checklist status
-            showMessage(`Document ${DOCUMENT_MODEL[key]} uploaded successfully.`, true);
-        } else {
-            showMessage(result.message || "Error updating document status.", false);
-        }
+      // پاکسازی خطاها و نمایش داشبورد
+      hideError(err1); hideError(err2);
+      showDashboard();
+    } catch (err) {
+      console.error(err);
+      sessionStorage.removeItem('sessionToken');
+      sessionToken = null;
+      showAuth();
     }
+  }
 
-    // --- Logout Button Listener ---
-    document.getElementById('btn-logout').onclick = () => performLogout(false);
-
-    // ----------------------------------------------------------------
-    // 6. Initial Application Load and Session Check
-    // ----------------------------------------------------------------
-
-    async function initialize() {
-        const token = sessionStorage.getItem('sessionToken');
-        const ceu = sessionStorage.getItem('ceuNumber');
-        
-        // Ensure Lucide icons are ready
-        lucide.createIcons();
-
-        if (token && ceu) {
-            // Attempt to validate existing session
-            const result = await sendRequest('validateSession', { token, ceuNumber: ceu });
-            
-            if (result.success) {
-                currentUserData = result.user;
-                renderDashboard();
-                startSessionTimer();
-                showPage('dashboard');
-                showMessage("Active session restored.", true);
-            } else {
-                // Invalid session, clear tokens and go to login
-                sessionStorage.removeItem('sessionToken');
-                sessionStorage.removeItem('ceuNumber');
-                showPage('login-step-1');
-                showMessage(result.message || "Session expired. Please log in.", false);
-            }
-        } else {
-            // No session found, start at step 1
-            showPage('login-step-1');
-        }
+  // دانلود نامهٔ ویزا (نمونه)
+  btnDownload.addEventListener('click', () => {
+    if (btnDownload.disabled) {
+      alert('برای دانلود، لطفاً هزینهٔ درخواست ویزای خود را پرداخت نمایید.');
+      return;
     }
+    // درصورت نیاز: می‌توان WebApp را توسعه داد که لینک رسمی را برگرداند یا فایل را ارسال کند.
+    alert('دانلود نامهٔ ویزا: در نسخهٔ فعلی دمو است. لطفاً endpoint دانلود رسمی را در WebApp اضافه کنید.');
+  });
 
-    initialize();
+  // handleUpload: در این نمونه آپلود واقعی در WebApp پیاده نشده است.
+  // => شما باید در Apps Script endpoint ای بنویسید که فایل را (multipart) بگیرد یا فایل را از کاربر به Drive آپلود کند.
+  // درحال حاضر این تابع شبیه‌سازی می‌کند و پیغام راهنما نشان می‌دهد.
+  async function handleUpload(fieldKey, fileInput) {
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+      alert('لطفاً یک فایل انتخاب کنید.');
+      return;
+    }
+    // امن‌ترین راه: آپلود از طریق Google Picker / Apps Script که در Drive آپلود کرده و لینک را در ستون مربوطه قرار دهد.
+    alert('آپلود شبیه‌سازی شد. برای فعال‌سازی واقعی، WebApp را توسعه دهید تا فایل را در Drive آپلود کرده و لینک را در ستون «' + fieldKey + '» ثبت کند.');
+    // بعد از آپلود واقعی، بهتر است کاربر صفحه را رفرش کند یا مجدداً checkSession اجرا شود تا ستون‌ها از شیت خوانده شوند.
+  }
 
-});
+  // final checklist
+  btnFinalChecklist.addEventListener('click', () => {
+    const rows = uploadsList.querySelectorAll('.upload-row');
+    const results = [];
+    rows.forEach(r => {
+      const text = r.textContent || '';
+      // اگر در متن 'نمایش فایل' وجود داره یعنی لینک هست
+      if (text.includes('نمایش فایل')) {
+        results.push('✅ ' + text.split(':')[0].trim());
+      } else {
+        results.push('⛔ ' + text.split(':')[0].trim() + ' — در انتظار بارگذاری');
+      }
+    });
+    checklistResult.textContent = results.join(' • ');
+  });
+
+  // logout
+  btnLogout.addEventListener('click', doLogout);
+
+  async function doLogout() {
+    try {
+      const token = sessionStorage.getItem('sessionToken') || sessionToken || '';
+      if (token) await apiFetch('logout', { sessionToken: token });
+    } catch(e){ console.warn(e); }
+    sessionStorage.removeItem('sessionToken');
+    sessionStorage.removeItem('sessionCEU');
+    sessionToken = null;
+    showAuth();
+  }
+
+  // نمایش/پنهان کردن صفحات
+  function showAuth(){ authArea.classList.remove('hidden'); dashboardArea.classList.add('hidden'); }
+  function showDashboard(){ authArea.classList.add('hidden'); dashboardArea.classList.remove('hidden'); }
+
+  // شروعِ نشست (تایمر بی‌حرکتی)
+  function resetAndStart(){ resetInactivity(); }
+
+  // init: اگر sessionToken داریم سعی می‌کنیم مستقیم لاگین کنیم
+  (async function init(){
+    if (!API || API.indexOf('http') !== 0) {
+      alert('خطا: WebApp آدرس‌دهی نشده است. لطفاً window.VISA_API_BASE را در index.html تنظیم کنید.');
+      return;
+    }
+    sessionToken = sessionStorage.getItem('sessionToken') || null;
+    if (sessionToken) {
+      await loadDashboard();
+      resetAndStart();
+    } else {
+      showAuth();
+    }
+  })();
+
+})();
